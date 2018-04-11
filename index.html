@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="joint.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="jquery.js"></script>
+    <script src="lodash.js"></script>
+    <script src="backbone.js"></script>
+    <script src="joint.js"></script>
+</head>
+<body>
+<div id="myholder">
+</div>
+<script type="text/javascript">
+
+    var graph = new joint.dia.Graph;
+    var paper = new joint.dia.Paper({ el: $('#myholder'), width: 1200, height: 700, gridSize: 1, model: graph });
+
+    var elementWidth = 230;
+    var elementHeight = 114;
+
+    // Create a custom element.
+    // ------------------------
+
+    joint.shapes.html = {};
+    joint.shapes.html.Element = joint.shapes.basic.Rect.extend({
+        defaults: joint.util.deepSupplement({
+            type: 'html.Element',
+            attrs: {
+                rect: { stroke: 'none', 'fill-opacity': 0 }
+            }
+        }, joint.shapes.basic.Rect.prototype.defaults)
+    });
+
+    // Create a custom view for that element that displays an HTML div above it.
+    // -------------------------------------------------------------------------
+
+    joint.shapes.html.ElementView = joint.dia.ElementView.extend({
+
+        template: [
+            '<div class="html-element">',
+                '<button class="delete">x</button>',
+                '<input class="inputTitle" id="inputTitle" name="inputTitle" type="text"/> </br>',
+
+            // labels
+                '<label>Min time | Est time | Max time | Dur</label>',
+
+            // input fields for PERT
+                '<input class="pertInput" id="minTime" type="number" />',
+                '<input class="pertInput" id="estTime" type="number" />',
+                '<input class="pertInput" id="maxTime" type="number" />',
+                '<input class="duration" id="duration" type="number" />',
+
+            // results
+                '<label>Early start | finish | Late start | finish</label>',
+                '<input class="cpmResult" id="earlyStart" type="number" />',
+                '<input class="cpmResult" id="earlyFinish" type="number" />',
+                '<input class="cpmResult" id="lateStart" type="number" />',
+                '<input class="cpmResult" id="lateFinish" type="number" />',
+            '</div>'
+        ].join(''),
+
+        // 1 2 3 2 -|- 1 2 6 2 -|- 2 4 6 4
+        // 2 4 10 4
+
+        initialize: function() {
+            _.bindAll(this, 'updateBox');
+            joint.dia.ElementView.prototype.initialize.apply(this, arguments);
+            this.$box = $(_.template(this.template)());
+
+            // title
+            this.$box.find('#inputTitle').on('change', _.bind(function(evt) {
+                this.model.set('inputTitle', $(evt.target).val());
+            }, this));
+
+            // PERT input
+            this.$box.find('#minTime').on('change', _.bind(function(evt) {
+                this.model.set('minTime', $(evt.target).val());
+            }, this));
+
+            this.$box.find('#estTime').on('change', _.bind(function(evt) {
+                this.model.set('estTime', $(evt.target).val());
+            }, this));
+
+            this.$box.find('#maxTime').on('change', _.bind(function(evt) {
+                this.model.set('maxTime', $(evt.target).val());
+            }, this));
+
+            // duration
+            this.$box.find('#duration').on('change', _.bind(function(evt) {
+                this.model.set('duration', $(evt.target).val());
+            }, this));
+
+            // CPM results
+            this.$box.find('#earlyStart').on('change', _.bind(function(evt) {
+                this.model.set('earlyStart', $(evt.target).val());
+            }, this));
+
+            this.$box.find('#earlyFinish').on('change', _.bind(function(evt) {
+                this.model.set('earlyFinish', $(evt.target).val());
+            }, this));
+
+            this.$box.find('#lateStart').on('change', _.bind(function(evt) {
+                this.model.set('lateStart', $(evt.target).val());
+            }, this));
+
+            this.$box.find('#lateFinish').on('change', _.bind(function(evt) {
+                this.model.set('lateFinish', $(evt.target).val());
+            }, this));
+
+            this.$box.find('.delete').on('click', _.bind(this.model.remove, this.model));
+            // Update the box position whenever the underlying model changes.
+            this.model.on('change', this.updateBox, this);
+            // Remove the box when the model gets removed from the graph.
+            this.model.on('remove', this.removeBox, this);
+
+            this.updateBox();
+        },
+        render: function() {
+            joint.dia.ElementView.prototype.render.apply(this, arguments);
+            this.paper.$el.prepend(this.$box);
+            this.updateBox();
+            return this;
+        },
+        updateBox: function() {
+            // Set the position and dimension of the box so that it covers the JointJS element.
+            var bbox = this.model.getBBox();
+
+            this.$box.find('#inputTitle').val(this.model.get('inputTitle'));
+            this.$box.find('#minTime').val(this.model.get('minTime'));
+            this.$box.find('#estTime').val(this.model.get('estTime'));
+            this.$box.find('#maxTime').val(this.model.get('maxTime'));
+            this.$box.find('#duration').val(this.model.get('duration'));
+            this.$box.find('#earlyStart').val(this.model.get('earlyStart'));
+            this.$box.find('#earlyFinish').val(this.model.get('earlyFinish'));
+            this.$box.find('#lateStart').val(this.model.get('lateStart'));
+            this.$box.find('#lateFinish').val(this.model.get('lateFinish'));
+
+            this.$box.css({
+                width: bbox.width,
+                height: bbox.height,
+                left: bbox.x,
+                top: bbox.y,
+                transform: 'rotate(' + (this.model.get('angle') || 0) + 'deg)'
+            });
+        },
+        removeBox: function(evt) {
+            this.$box.remove();
+        }
+    });
+
+    // Create JointJS elements and add them to the graph as usual.
+    // -----------------------------------------------------------
+
+    // add start element -- not needed anymore
+    /*
+    var start = new joint.shapes.basic.Path({
+        size: { width: 100, height: 100 },
+        attrs: {
+            path: { d: 'M 30 0 L 60 30 30 60 0 30 z' },
+            text: {
+                text: 'start',
+                'ref-y': -66 // basic.Path text is originally positioned under the element
+            }
+        }
+    });*/
+
+    var el1 = new joint.shapes.html.Element({
+        position: { x: 140, y: 140 },
+        size: { width: elementWidth, height: elementHeight },
+        inputTitle: 'Title 1'
+    });
+    var el2 = new joint.shapes.html.Element({
+        position: { x: 400, y: 200 },
+        size: { width: elementWidth, height: elementHeight },
+        attrs: { text: { magnet: true } },
+        inputTitle: 'Title 2'
+    });
+
+    var l1 = new joint.dia.Link({
+        source: { id: el1.id },
+        target: { id: el2.id },
+        attrs: { '.connection': { 'stroke-width': 5, stroke: '#34495E' },'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' }  }
+    });
+
+    graph.addCells([el1, el2, l1]);
+
+    // add connection on double click
+    paper.on('cell:pointerdblclick', function(cellView) {
+
+        var connection = new joint.dia.Link({
+            source: { id: cellView.model.id },
+            attrs: { '.connection': { 'stroke-width': 5, stroke: '#34495E' },'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' }  }
+        });
+
+        graph.addCells([connection]);
+
+    });
+
+    function addElement () {
+        var el = new joint.shapes.html.Element({
+            position: { x: 80, y: 80 },
+            size: { width: elementWidth, height: elementHeight },
+            inputTitle: 'Title'
+        });
+
+        graph.addCells([el]);
+    }
+
+    function getCriticalPath () {
+
+        //alert(paper.model.getElements());
+        var text = JSON.stringify(graph);
+
+        text = text.substr(text.indexOf("["),text.indexOf("]") - text.indexOf("[") + 1);
+        document.getElementById("result").innerText = text;
+
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            data: text,
+            url: "http://localhost:8090/criticalPath",
+            success: function(data){
+                alert(data);
+            }
+        });
+    }
+
+    function getPERTValues () {
+
+        //alert(paper.model.getElements());
+        var text = JSON.stringify(graph);
+
+        text = text.substr(text.indexOf("["),text.indexOf("]") - text.indexOf("[") + 1);
+        document.getElementById("result").innerText = text;
+
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            data: text,
+            url: "http://localhost:8090/pert",
+            success: function(data){
+                alert(data);
+            }
+        });
+    }
+</script>
+
+<button type="button" onclick="addElement()">Add element</button>
+<button type="button" onclick="getCriticalPath()">Get critical path</button>
+<button type="button" onclick="getPERTValues()">Get PERT values</button>
+
+<p id="result"></p>
+</body>
+</html>
