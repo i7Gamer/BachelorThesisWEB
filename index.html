@@ -27,7 +27,10 @@
         defaults: joint.util.deepSupplement({
             type: 'html.Element',
             attrs: {
-                rect: { stroke: 'none', 'fill-opacity': 0 }
+                rect: { fill: '#3498DB', rx: 5, ry: 5, 'stroke-width': 4, stroke: '#3498DB',
+                    'border-radius': '4px', border: '2px solid #2980B9',
+                    'box-shadow': 'inset 0 0 5px black, 2px 2px 1px grey'
+                }
             }
         }, joint.shapes.basic.Rect.prototype.defaults)
     });
@@ -108,6 +111,10 @@
                 this.model.set('lateFinish', $(evt.target).val());
             }, this));
 
+            this.$box.find('.html-element').on('change', _.bind(function(evt) {
+                this.model.set('class', $(evt.target).val());
+            }, this));
+
             this.$box.find('.delete').on('click', _.bind(this.model.remove, this.model));
             // Update the box position whenever the underlying model changes.
             this.model.on('change', this.updateBox, this);
@@ -135,6 +142,7 @@
             this.$box.find('#earlyFinish').val(this.model.get('earlyFinish'));
             this.$box.find('#lateStart').val(this.model.get('lateStart'));
             this.$box.find('#lateFinish').val(this.model.get('lateFinish'));
+            this.$box.find('.html-element').val(this.model.get('class'));
 
             this.$box.css({
                 width: bbox.width,
@@ -152,38 +160,63 @@
     // Create JointJS elements and add them to the graph as usual.
     // -----------------------------------------------------------
 
-    // add start element -- not needed anymore
-    /*
-    var start = new joint.shapes.basic.Path({
-        size: { width: 100, height: 100 },
-        attrs: {
-            path: { d: 'M 30 0 L 60 30 30 60 0 30 z' },
-            text: {
-                text: 'start',
-                'ref-y': -66 // basic.Path text is originally positioned under the element
-            }
-        }
-    });*/
-
     var el1 = new joint.shapes.html.Element({
         position: { x: 140, y: 140 },
         size: { width: elementWidth, height: elementHeight },
-        inputTitle: 'Title 1'
+        attrs: { text: { magnet: true } },
+        inputTitle: 'Title 1',
+        duration: 2
     });
+
     var el2 = new joint.shapes.html.Element({
         position: { x: 400, y: 200 },
         size: { width: elementWidth, height: elementHeight },
         attrs: { text: { magnet: true } },
-        inputTitle: 'Title 2'
+        inputTitle: 'Title 2',
+        duration: 4
     });
 
-    var l1 = new joint.dia.Link({
+    var el3 = new joint.shapes.html.Element({
+        position: { x: 400, y: 200 },
+        size: { width: elementWidth, height: elementHeight },
+        attrs: { text: { magnet: true } },
+        inputTitle: 'Title 3',
+        duration: 3
+    });
+
+    var el4 = new joint.shapes.html.Element({
+        position: { x: 400, y: 200 },
+        size: { width: elementWidth, height: elementHeight },
+        attrs: { text: { magnet: true } },
+        inputTitle: 'Title 4',
+        duration: 4
+    });
+
+    var l12 = new joint.dia.Link({
         source: { id: el1.id },
         target: { id: el2.id },
         attrs: { '.connection': { 'stroke-width': 5, stroke: '#34495E' },'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' }  }
     });
 
-    graph.addCells([el1, el2, l1]);
+    var l13 = new joint.dia.Link({
+        source: { id: el1.id },
+        target: { id: el3.id },
+        attrs: { '.connection': { 'stroke-width': 5, stroke: '#34495E' },'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' }  }
+    });
+
+    var l34 = new joint.dia.Link({
+        source: { id: el3.id },
+        target: { id: el4.id },
+        attrs: { '.connection': { 'stroke-width': 5, stroke: '#34495E' },'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' }  }
+    });
+
+    var l24 = new joint.dia.Link({
+        source: { id: el2.id },
+        target: { id: el4.id },
+        attrs: { '.connection': { 'stroke-width': 5, stroke: '#34495E' },'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' }  }
+    });
+
+    graph.addCells([el1, el2, el3, el4, l12, l13, l24, l34]);
 
     // add connection on double click
     paper.on('cell:pointerdblclick', function(cellView) {
@@ -208,41 +241,64 @@
     }
 
     function getCriticalPath () {
-
-        //alert(paper.model.getElements());
-        var text = JSON.stringify(graph);
-
-        text = text.substr(text.indexOf("["),text.indexOf("]") - text.indexOf("[") + 1);
-        document.getElementById("result").innerText = text;
-
         $.ajax({
             type: "POST",
-            dataType: "json",
-            data: text,
+            //dataType: "application/json",
+            contentType: "application/json",
+            data: getElementsAsJSON(),
             url: "http://localhost:8090/criticalPath",
             success: function(data){
-                alert(data);
+                data.forEach(function(result) {
+                    var element = graph.getCell(result.id);
+
+                    if(result.isCriticalPath == 1){
+
+                        element.attr({
+                            rect: { fill: '#ff100a', rx: 5, ry: 5, 'stroke-width': 4, stroke: 'red' }
+                        });
+
+                        //element.toggleClass('html-element-criticalPath');
+                    }
+
+                    element.set('earlyStart', result.earlyStart);
+                    element.set('lateStart', result.lateStart);
+                    element.set('earlyFinish', result.earlyFinish);
+                    element.set('lateFinish', result.lateFinish);
+
+                });
+            },
+            error: function (err) {
+                alert("AJAX error in request: " + JSON.stringify(err, null, 2));
             }
         });
     }
 
     function getPERTValues () {
 
-        //alert(paper.model.getElements());
+        $.ajax({
+            type: "POST",
+            //dataType: "application/json",
+            contentType: "application/json",
+            data: getElementsAsJSON(),
+            url: "http://localhost:8090/pert",
+            success: function(data){
+                data.forEach(function(result) {
+                    var element = graph.getCell(result.id);
+                    element.set('duration', result.duration);
+                });
+            },
+            error: function (err) {
+                alert("AJAX error in request: " + JSON.stringify(err, null, 2));
+            }
+        });
+    }
+
+    function getElementsAsJSON(){
         var text = JSON.stringify(graph);
 
         text = text.substr(text.indexOf("["),text.indexOf("]") - text.indexOf("[") + 1);
         document.getElementById("result").innerText = text;
-
-        $.ajax({
-            type: "POST",
-            dataType: "json",
-            data: text,
-            url: "http://localhost:8090/pert",
-            success: function(data){
-                alert(data);
-            }
-        });
+        return text;
     }
 </script>
 
