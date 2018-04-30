@@ -304,7 +304,7 @@
     function getElementsAsJSON(){
         var text = JSON.stringify(graph);
 
-        text = text.substr(text.indexOf("["),text.indexOf("]") - text.indexOf("[") + 1);
+        text = text.substr(text.indexOf("["),text.lastIndexOf("]") - text.indexOf("[") + 1);
         document.getElementById("result").innerText = text;
         return text;
     }
