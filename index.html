@@ -275,10 +275,11 @@
 
                 });
             },
-            error: function (err) {
-                alert("AJAX error in request: " + JSON.stringify(err, null, 2));
+            error: function(xhr, status, error) {
+                var err = eval("(" + xhr.responseText + ")");
+                alert(err.message);
             }
-        });
+            });
     }
 
     function getPERTValues () {
@@ -295,8 +296,9 @@
                     element.set('duration', result.duration);
                 });
             },
-            error: function (err) {
-                alert("AJAX error in request: " + JSON.stringify(err, null, 2));
+            error: function(xhr, status, error) {
+                var err = eval("(" + xhr.responseText + ")");
+                alert(err.message);
             }
         });
     }
