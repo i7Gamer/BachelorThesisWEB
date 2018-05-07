@@ -11,6 +11,38 @@
 #paper-html-elements svg .link {
     z-index: 2;
 }
+
+body{
+    height: 100vh;
+}
+
+#myholder{
+    width: 100%;
+    height:100%;
+    overflow: hidden;
+}
+
+.ui-tooltip {
+    max-width: 350px;
+}
+
+#toolbar{
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 180px;
+    height: 100%;
+    margin-right: 10px;
+    border-left-color: gray;
+    border-left: 1px;
+    border-left-style: solid;
+}
+
+.toolbarbutton{
+    margin: 5px;
+    width: 100%;
+}
+
 .html-element {
     position: absolute;
     background: #3498DB;

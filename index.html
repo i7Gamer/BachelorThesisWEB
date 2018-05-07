@@ -1,20 +1,62 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <link rel="stylesheet" href="joint.css" />
-    <link rel="stylesheet" href="style.css" />
-    <script src="jquery.js"></script>
-    <script src="lodash.js"></script>
-    <script src="backbone.js"></script>
-    <script src="joint.js"></script>
-</head>
-<body>
-<div id="myholder">
-</div>
+    <head>
+        <link rel="stylesheet" href="joint.css" />
+        <link rel="stylesheet" href="style.css" />
+        <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <script src="jquery.js"></script>
+        <script src="jquery-ui.js"></script>
+        <script src="lodash.js"></script>
+        <script src="backbone.js"></script>
+        <script src="joint.js"></script>
+    </head>
+    <body style="margin: 0;">
+        <div id="myholder" class="diagram">
+        </div>
+        <div id="toolbar">
+            <button class="ui-button ui-widget ui-corner-all toolbarbutton" title="Use this button, to add another element to the diagram" onclick="addElement()">Add element</button>
+            <button class="ui-button ui-widget ui-corner-all toolbarbutton" title="Use this button, to calculate the critical path" onclick="getCriticalPath()">Get critical path</button>
+            <button class="ui-button ui-widget ui-corner-all toolbarbutton" title="Use this button, to calculate the duration from min, est and max time" onclick="getPERTValues()">Get PERT values</button>
+            <button class="ui-button ui-widget ui-corner-all toolbarbutton" title="After clicking this button, first click the element you want the connection to start from and then select the target" onclick="addConnection()">Add connection</button>
+            <p id="result"></p>
+        </div>
+    </body>
+</html>
+
+
 <script type="text/javascript">
+    // Show tooltips on buttons
+    $(function(){
+        $(document).tooltip({
+            items: "[title]",
+            content: function() {
+                var element = $( this );
+                if ( element.is( "[title]" ) ) {
+                    return element.attr( "title" );
+                }
+            }
+        });
+    });
+
+    var connection = false;
+    var firstElementId = null;
+
+    function addConnection () {
+        if(connection === false) {
+            console.log("add connection clicked");
+            connection = true;
+        }
+    }
+
+
 
     var graph = new joint.dia.Graph;
-    var paper = new joint.dia.Paper({ el: $('#myholder'), width: 1200, height: 700, gridSize: 1, model: graph });
+    var paper = new joint.dia.Paper({
+        el: $('#myholder'),
+        width: $('#myholder').width()- $('#toolbar').outerWidth(true),
+        height: $('#myholder').height(),
+        gridSize: 1,
+        model: graph });
 
     var elementWidth = 230;
     var elementHeight = 114;
@@ -42,24 +84,24 @@
 
         template: [
             '<div class="html-element">',
-                '<button class="delete">x</button>',
-                '<input class="inputTitle" id="inputTitle" name="inputTitle" type="text"/> </br>',
+            '<button class="delete">x</button>',
+            '<input class="inputTitle" id="inputTitle" name="inputTitle" type="text"/> </br>',
 
             // labels
-                '<label>Min time | Est time | Max time | Dur</label>',
+            '<label>Min time | Est time | Max time | Dur</label>',
 
             // input fields for PERT
-                '<input class="pertInput" id="minTime" type="number" />',
-                '<input class="pertInput" id="estTime" type="number" />',
-                '<input class="pertInput" id="maxTime" type="number" />',
-                '<input class="duration" id="duration" type="number" />',
+            '<input class="pertInput" id="minTime" type="number" />',
+            '<input class="pertInput" id="estTime" type="number" />',
+            '<input class="pertInput" id="maxTime" type="number" />',
+            '<input class="duration" id="duration" type="number" />',
 
             // results
-                '<label>Early start | finish | Late start | finish</label>',
-                '<input class="cpmResult" id="earlyStart" type="number" />',
-                '<input class="cpmResult" id="earlyFinish" type="number" />',
-                '<input class="cpmResult" id="lateStart" type="number" />',
-                '<input class="cpmResult" id="lateFinish" type="number" />',
+            '<label>Early start | finish | Late start | finish</label>',
+            '<input class="cpmResult" id="earlyStart" type="number" />',
+            '<input class="cpmResult" id="earlyFinish" type="number" />',
+            '<input class="cpmResult" id="lateStart" type="number" />',
+            '<input class="cpmResult" id="lateFinish" type="number" />',
             '</div>'
         ].join(''),
 
@@ -161,13 +203,13 @@
     // -----------------------------------------------------------
 
     var el1 = new joint.shapes.html.Element({
-        position: { x: 40, y: 150 },
+        position: { x: 40, y: 180 },
         size: { width: elementWidth, height: elementHeight },
         attrs: { text: { magnet: true } },
         inputTitle: 'Title 1',
         minTime: 1,
-	estTime: 2,
-	maxTime: 4
+        estTime: 2,
+        maxTime: 4
     });
 
     var el2 = new joint.shapes.html.Element({
@@ -176,8 +218,8 @@
         attrs: { text: { magnet: true } },
         inputTitle: 'Title 2',
         minTime: 2,
-	estTime: 4,
-	maxTime: 6
+        estTime: 4,
+        maxTime: 6
     });
 
     var el3 = new joint.shapes.html.Element({
@@ -186,18 +228,18 @@
         attrs: { text: { magnet: true } },
         inputTitle: 'Title 3',
         minTime: 2,
-	estTime: 5,
-	maxTime: 12
+        estTime: 5,
+        maxTime: 12
     });
 
     var el4 = new joint.shapes.html.Element({
-        position: { x: 580, y: 150 },
+        position: { x: 580, y: 180 },
         size: { width: elementWidth, height: elementHeight },
         attrs: { text: { magnet: true } },
         inputTitle: 'Title 4',
         minTime: 2,
-	estTime: 4,
-	maxTime: 5
+        estTime: 4,
+        maxTime: 5
     });
 
     var l12 = new joint.dia.Link({
@@ -226,16 +268,23 @@
 
     graph.addCells([el1, el2, el3, el4, l12, l13, l24, l34]);
 
-    // add connection on double click
-    paper.on('cell:pointerdblclick', function(cellView) {
+    paper.on('cell:pointerclick', function(cellView) {
+        if(connection === true && firstElementId != null){
+            console.log("second click");
+            var newConnection = new joint.dia.Link({
+                source: { id: firstElementId },
+                target: { id: cellView.model.id },
+                attrs: { '.connection': { 'stroke-width': 5, stroke: '#34495E' },'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' }  }
+            });
+            graph.addCells([newConnection]);
 
-        var connection = new joint.dia.Link({
-            source: { id: cellView.model.id },
-            attrs: { '.connection': { 'stroke-width': 5, stroke: '#34495E' },'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' }  }
-        });
-
-        graph.addCells([connection]);
-
+            connection = false;
+            firstElementId = null;
+        }
+        else if(connection === true && firstElementId == null){
+            console.log("first click");
+            firstElementId = cellView.model.id;
+        }
     });
 
     function addElement () {
@@ -279,7 +328,7 @@
                 var err = eval("(" + xhr.responseText + ")");
                 alert(err.message);
             }
-            });
+        });
     }
 
     function getPERTValues () {
@@ -311,11 +360,3 @@
         return text;
     }
 </script>
-
-<button type="button" onclick="addElement()">Add element</button>
-<button type="button" onclick="getCriticalPath()">Get critical path</button>
-<button type="button" onclick="getPERTValues()">Get PERT values</button>
-
-<p id="result"></p>
-</body>
-</html>
