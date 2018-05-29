@@ -18,6 +18,8 @@
             <button class="ui-button ui-widget ui-corner-all toolbarbutton" title="Use this button to calculate the critical path" onclick="getCriticalPath()">Get critical path(s)</button>
             <button class="ui-button ui-widget ui-corner-all toolbarbutton" title="Use this button to calculate the duration from min, est and max time" onclick="getPERTValues()">Get PERT values</button>
             <button class="ui-button ui-widget ui-corner-all toolbarbutton" title="Use this button to calculate the duration using the monte carlo simulation" onclick="getMCValues()">Get monte carlo values</button>
+            <p class="toolbarbutton">MC sample size:</p>
+            <input class="ui-button ui-widget ui-corner-all toolbarbutton" id="sampleSize" type="number" value="100"/>
             <button class="ui-button ui-widget ui-corner-all toolbarbutton" title="After clicking this button, first click the element you want the connection to start from and then select the target" onclick="addConnection()">Add connection</button>
             <p id="result"></p>
         </div>
@@ -366,7 +368,7 @@
             type: "POST",
             //dataType: "application/json",
             contentType: "application/json",
-            data: getElementsAsJSON(),
+            data: getElementsAsJSONWithSampleSize(),
             url: server + "mc",
             success: function(data){
                 data.forEach(function(result) {
@@ -387,5 +389,11 @@
         text = text.substr(text.indexOf("["),text.lastIndexOf("]") - text.indexOf("[") + 1);
         document.getElementById("result").innerText = text;
         return text;
+    }
+    
+    function getElementsAsJSONWithSampleSize() {
+        var text = getElementsAsJSON();
+        return text.slice(0, 1) + "{\"type\":\"sampleSize\",\"sampleSize\":\""+document.getElementById('sampleSize').value+"\"}," + text.slice(1);
+
     }
 </script>
