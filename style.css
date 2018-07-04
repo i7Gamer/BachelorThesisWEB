@@ -108,6 +108,18 @@ body{
     width: 48px;
 }
 
+.mcResult
+{
+    margin-top: 6px;
+    width: 60px;
+}
+
+.variance
+{
+    margin-top: 6px;
+    width: 100px;
+}
+
 /*.html-element input {
     position: absolute;
     bottom: 0;

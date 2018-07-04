@@ -62,8 +62,8 @@
         gridSize: 1,
         model: graph });
 
-    var elementWidth = 230;
-    var elementHeight = 114;
+    var elementWidth = 236;
+    var elementHeight = 164;
 
     // Create a custom element.
     // ------------------------
@@ -88,24 +88,29 @@
 
         template: [
             '<div class="html-element">',
-            '<button class="delete">x</button>',
-            '<input class="inputTitle" id="inputTitle" name="inputTitle" type="text"/> </br>',
+                '<button class="delete">x</button>',
+                '<input class="inputTitle" id="inputTitle" name="inputTitle" type="text"/> </br>',
 
-            // labels
-            '<label>Min time | Est time | Max time | Dur</label>',
+                // labels
+                '<label>Min time | Est time | Max time | Dur</label>',
 
-            // input fields for PERT
-            '<input class="pertInput" id="minTime" type="number" />',
-            '<input class="pertInput" id="estTime" type="number" />',
-            '<input class="pertInput" id="maxTime" type="number" />',
-            '<input class="duration" id="duration" type="number" />',
+                // input fields for PERT
+                '<input class="pertInput" id="minTime" type="number" />',
+                '<input class="pertInput" id="estTime" type="number" />',
+                '<input class="pertInput" id="maxTime" type="number" />',
+                '<input class="duration" id="duration" type="number" />',
 
-            // results
-            '<label>Early start | finish | Late start | finish</label>',
-            '<input class="cpmResult" id="earlyStart" type="number" />',
-            '<input class="cpmResult" id="earlyFinish" type="number" />',
-            '<input class="cpmResult" id="lateStart" type="number" />',
-            '<input class="cpmResult" id="lateFinish" type="number" />',
+                // results
+                '<label>Early start | finish | Late start | finish</label>',
+                '<input class="cpmResult" id="earlyStart" type="number" readonly/>',
+                '<input class="cpmResult" id="earlyFinish" type="number" readonly/>',
+                '<input class="cpmResult" id="lateStart" type="number" readonly />',
+                '<input class="cpmResult" id="lateFinish" type="number" readonly/>',
+                '<label>Probability to be on CP:</label>',
+                '<input class="mcResult" id="probabilityCP" type="number" readonly/>',
+                '<label>Variance:</label>',
+                '<input class="variance" id="variance" type="number" readonly/>',
+
             '</div>'
         ].join(''),
 
@@ -157,9 +162,19 @@
                 this.model.set('lateFinish', $(evt.target).val());
             }, this));
 
+            this.$box.find('#probabilityCP').on('change', _.bind(function(evt) {
+                this.model.set('probabilityCP', $(evt.target).val());
+            }, this));
+
+            this.$box.find('#variance').on('change', _.bind(function(evt) {
+                this.model.set('variance', $(evt.target).val());
+            }, this));
+
             this.$box.find('.html-element').on('change', _.bind(function(evt) {
                 this.model.set('class', $(evt.target).val());
             }, this));
+
+
 
             this.$box.find('.delete').on('click', _.bind(this.model.remove, this.model));
             // Update the box position whenever the underlying model changes.
@@ -188,6 +203,8 @@
             this.$box.find('#earlyFinish').val(this.model.get('earlyFinish'));
             this.$box.find('#lateStart').val(this.model.get('lateStart'));
             this.$box.find('#lateFinish').val(this.model.get('lateFinish'));
+            this.$box.find('#probabilityCP').val(this.model.get('probabilityCP'));
+            this.$box.find('#variance').val(this.model.get('variance'));
             this.$box.find('.html-element').val(this.model.get('class'));
 
             this.$box.css({
@@ -370,10 +387,35 @@
             contentType: "application/json",
             data: getElementsAsJSONWithSampleSize(),
             url: server + "mc",
+            timeout: document.getElementById('sampleSize').value * 10,
             success: function(data){
                 data.forEach(function(result) {
                     var element = graph.getCell(result.id);
                     element.set('duration', result.duration);
+
+                    if(result.isCriticalPath == 1){
+
+                        element.attr({
+                            rect: { fill: '#ff100a', rx: 5, ry: 5, 'stroke-width': 4, stroke: 'red' }
+                        });
+
+                        //element.toggleClass('html-element-criticalPath');
+                    }
+                    else{
+                        element.attr({
+                            rect: { fill: '#3498DB', rx: 5, ry: 5, 'stroke-width': 4, stroke: '#3498DB',
+                                'border-radius': '4px', border: '2px solid #2980B9',
+                                'box-shadow': 'inset 0 0 5px black, 2px 2px 1px grey'
+                            }
+                        });
+                    }
+
+                    element.set('earlyStart', result.earlyStart);
+                    element.set('lateStart', result.lateStart);
+                    element.set('earlyFinish', result.earlyFinish);
+                    element.set('lateFinish', result.lateFinish);
+                    element.set('probabilityCP', result.probabilityToBeOnCriticalPath);
+                    element.set('variance', result.variance);
                 });
             },
             error: function(xhr, status, error) {
@@ -387,13 +429,14 @@
         var text = JSON.stringify(graph);
 
         text = text.substr(text.indexOf("["),text.lastIndexOf("]") - text.indexOf("[") + 1);
-        document.getElementById("result").innerText = text;
+        //document.getElementById("result").innerText = text;
         return text;
     }
     
     function getElementsAsJSONWithSampleSize() {
         var text = getElementsAsJSON();
-        return text.slice(0, 1) + "{\"type\":\"sampleSize\",\"sampleSize\":\""+document.getElementById('sampleSize').value+"\"}," + text.slice(1);
-
+        text = text.slice(0, 1) + "{\"type\":\"sampleSize\",\"sampleSize\":\""+document.getElementById('sampleSize').value+"\"}," + text.slice(1);
+        document.getElementById("result").innerText = text;
+        return text;
     }
 </script>
